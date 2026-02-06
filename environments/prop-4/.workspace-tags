@@ -1,0 +1,10 @@
+# Optional workspace tags for example environment
+# One tag per line, format: key:value or simple-tag
+# Lines starting with # are comments and will be ignored
+
+# Example: Certificate/service identifier
+cert:cert-example
+# Add other custom tags as needed
+# team:platform
+# cost-center:example-123
+# critical:false
