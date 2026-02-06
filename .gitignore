@@ -42,3 +42,7 @@ terraform.rc
 # Editor directories
 .idea/
 .vscode/
+
+# Ignore all environment directories except example
+environments/*/
+!environments/example/
