@@ -2,6 +2,99 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Important**: All code changes must pass formatting (`make fmt-check`), linting (`make lint`), and validation before being committed.
+
+## Working with Claude Code
+
+### Before Starting a Session
+
+**Always create a new branch before using Claude Code:**
+
+```bash
+# Make sure you're on your main branch and it's up to date
+git checkout main
+git pull
+
+# Create a new branch for Claude's changes
+git checkout -b claude/[feature-description]
+```
+
+Example branch names:
+
+- `claude/refactor-auth`
+- `claude/add-tests`
+- `claude/fix-bug-123`
+- `claude/optimize-queries`
+
+### During the Session
+
+- Claude Code will make changes across multiple files
+- Changes are made directly to your working directory
+- You can interrupt or guide Claude at any point
+
+### After the Session
+
+**Review the changes:**
+
+```bash
+# See what files were modified
+git status
+
+# Review all changes
+git diff
+
+# Review changes file by file
+git diff path/to/file
+```
+
+**Commit the changes:**
+
+```bash
+# Stage all changes
+git add .
+
+# Commit with a descriptive message
+git commit -m "feat: [description] (Claude Code assisted)"
+
+# Or commit interactively to split into logical commits
+git add -p
+```
+
+**Merge when ready:**
+
+```bash
+# Switch back to main
+git checkout main
+
+# Merge the Claude branch
+git merge claude/[feature-description]
+
+# Or create a PR for team review
+git push origin claude/[feature-description]
+```
+
+### Reverting Changes
+
+If you need to undo Claude's changes:
+
+```bash
+# Discard all uncommitted changes
+git checkout .
+
+# Or delete the branch entirely
+git checkout main
+git branch -D claude/[feature-description]
+```
+
+### Best Practices
+
+- ✅ Create a new branch for each Claude Code session
+- ✅ Review all changes before committing
+- ✅ Test the code before merging to main
+- ✅ Use descriptive commit messages
+- ❌ Don't run Claude Code directly on main/master
+- ❌ Don't commit without reviewing changes first
+
 ## Project Overview
 
 This is a Terraform Cloud (TFC) workspace management system for deploying Akamai properties across multiple environments. It uses an environment-per-directory pattern where each subdirectory under `environments/` represents a separate TFC workspace with isolated state.
@@ -51,6 +144,7 @@ make help        # Show available commands and workspace info
 ```
 
 The `make init` command:
+
 1. **Runs `fmt-check`** - Ensures all files are properly formatted
 2. **Runs `lint`** - Executes tflint to catch issues (skips if tflint not installed)
 3. Auto-detects workspace name from directory
@@ -100,6 +194,7 @@ make apply
 ```
 
 The workspace `akamai-prop-api.prod.acme.com` will be created automatically with tags:
+
 - `environment:api.prod.acme.com` (automatic)
 - `project:mendix` (from backend.tf)
 - `cert:prod-wildcard` (from .workspace-tags)
@@ -119,6 +214,7 @@ make destroy
 ```
 
 Use this when:
+
 - You want to tear down infrastructure temporarily
 - You plan to redeploy later using the same workspace
 - You want to preserve workspace history and settings
@@ -133,12 +229,14 @@ make destroy-all
 ```
 
 This will:
+
 1. Run `terraform destroy` to remove all infrastructure
 2. Prompt for confirmation before deleting the workspace
 3. Delete the workspace from Terraform Cloud
 4. Remove all workspace history and state
 
 Use this when:
+
 - You're permanently removing an environment
 - You want complete cleanup with no remnants in TFC
 - You're sure you won't need the workspace history
@@ -176,6 +274,7 @@ See `docs/TAGGING.md` for comprehensive tagging documentation.
 ### akamai-property Module
 
 Currently contains a `null_resource` placeholder. When implementing Akamai resources:
+
 - Add to `modules/akamai-property/main.tf`
 - The module receives `environment` and `hostnames` variables from environments
 - Keep resources generic; environment-specific values come from environment directories
@@ -226,11 +325,13 @@ The project enforces code quality through automated validation:
 - **Validation**: Terraform configurations must pass `terraform validate`
 
 ### Naming Conventions (enforced by tflint)
+
 - Variables, outputs, locals, modules: `snake_case`
 - All variables must have `type` and `description`
 - All outputs must have `description`
 
 ### Running Validation
+
 - `make fmt` - Auto-format code before committing
 - `make init` - Automatically runs fmt-check, lint, and validate
 - `make lint` - Manually run linting checks
