@@ -55,6 +55,7 @@ make init && make apply
 ```
 
 **Result**: Three TFC workspaces, each with:
+
 - Isolated state
 - A `hostnames` output containing its managed hostnames
 - Tags indicating which certificate they use
@@ -82,6 +83,7 @@ terraform apply
 ```
 
 **Output**:
+
 ```hcl
 all_hostnames = [
   "api.prod.acme.com",
@@ -106,6 +108,7 @@ The single source of truth is the workspace outputs - no manual list maintenance
 **Problem**: Multiple environments use the same SSL certificate. You need all hostnames for the SAN field.
 
 **Solution**:
+
 1. Tag each environment with `cert:cert-id` in `.workspace-tags`
 2. Use `tfc-workspace-reader` to query all workspaces with that tag
 3. Aggregate hostnames automatically from workspace outputs
@@ -122,65 +125,6 @@ module "prod_cert_hostnames" {
 # Use aggregated hostnames for certificate
 resource "akamai_certificate" "prod_wildcard" {
   sans = module.prod_cert_hostnames.hostnames
-}
-```
-
-### DNS Configuration
-
-**Problem**: Bulk DNS operations across multiple related environments.
-
-**Solution**:
-```hcl
-module "production_environments" {
-  source       = "../../modules/tfc-workspace-reader"
-  tag_filter   = "environment-type:production"
-}
-
-# Create DNS records for all production hostnames
-resource "aws_route53_record" "production" {
-  for_each = toset(module.production_environments.hostnames)
-
-  zone_id = aws_route53_zone.main.zone_id
-  name    = each.value
-  type    = "CNAME"
-  records = [var.cdn_endpoint]
-}
-```
-
-### Compliance Reporting
-
-**Problem**: Audit which environments are critical or contain PII.
-
-**Solution**:
-```hcl
-module "critical_workspaces" {
-  source     = "../../modules/tfc-workspace-reader"
-  tag_filter = "critical:true"
-}
-
-output "critical_environments_report" {
-  value = {
-    count                = module.critical_workspaces.workspace_count
-    affected_workspaces  = module.critical_workspaces.workspace_names
-    total_hostnames      = length(module.critical_workspaces.hostnames)
-  }
-}
-```
-
-### Environment Discovery
-
-**Problem**: Find all staging environments for bulk operations.
-
-**Solution**:
-```hcl
-module "staging_environments" {
-  source     = "../../modules/tfc-workspace-reader"
-  tag_filter = "environment-type:staging"
-}
-
-# Auto-destroy staging environments nightly
-locals {
-  staging_workspaces = module.staging_environments.workspace_names
 }
 ```
 
@@ -294,6 +238,7 @@ make apply
 ```
 
 **What happens**:
+
 1. Workspace `akamai-prop-my-new-env` created in TFC with auto-apply enabled
 2. Tags applied: `environment:my-new-env`, `project:mendix`, `cert:my-certificate`, `team:platform`, `cost-center:engineering`
 3. Workspace output `hostnames` becomes queryable by other modules
@@ -301,6 +246,7 @@ make apply
 ### Workspace Auto-Configuration
 
 The `make init` command:
+
 - Detects workspace name from directory: `environments/api.test.nl` → `akamai-prop-api.test.nl`
 - Updates `backend.tf` automatically if name doesn't match
 - Creates workspace in TFC if missing (or updates existing workspace)
@@ -316,6 +262,7 @@ No manual workspace configuration needed!
 ### The Single Source of Truth Pattern
 
 **Traditional Approach** (configuration drift risk):
+
 ```hcl
 # Centralized list - easily gets out of sync
 variable "prod_certificate_hostnames" {
@@ -328,6 +275,7 @@ variable "prod_certificate_hostnames" {
 ```
 
 **This Architecture** (always accurate):
+
 ```hcl
 # Query live workspaces - always reflects current state
 module "prod_hostnames" {
@@ -427,11 +375,37 @@ terraform apply
 
 ## Requirements
 
-- Terraform >= 1.5
-- Terraform Cloud account
-- TFC Organization: `grinwis-com` (configurable)
-- TFC Project: `mendix` (configurable)
-- Authentication: `terraform login` or `TFC_TOKEN` environment variable
+### Prerequisites
+
+- **Terraform** >= 1.5
+- **Terraform Cloud Account** (free tier available)
+
+### Terraform Cloud Setup
+
+If you don't have a Terraform Cloud account yet:
+
+1. **Create an account**: Sign up at [https://app.terraform.io/signup/account](https://app.terraform.io/signup/account)
+2. **Create an organization**:
+   - After signing up, you'll be prompted to create an organization
+   - Choose a unique organization name (e.g., `your-company-name`)
+   - This will replace `grinwis-com` in the configuration files
+3. **Create a project** (optional but recommended):
+   - In your organization, navigate to Projects
+   - Create a new project (e.g., `infrastructure` or `akamai`)
+   - This will replace `mendix` in the configuration files
+4. **Authenticate locally**:
+   ```bash
+   terraform login
+   # Or set environment variable
+   export TFC_TOKEN="your-token-here"
+   ```
+
+### Configuration
+
+Update these values in your environment's `backend.tf` files:
+
+- **Organization**: Replace `grinwis-com` with your organization name
+- **Project**: Replace `mendix` with your project name (or remove if not using projects)
 
 ## Commands
 
